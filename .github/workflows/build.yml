@@ -16,7 +16,13 @@ jobs:
 
       - name: Extract Project ZIP
         run: |
-          unzip -o Smart_UPI_QR_Android_Project.zip
+          echo "Files in repository:"
+          ls -la
+          if compgen -G "*.zip" > /dev/null; then
+            echo "Found zip file, extracting..."
+            unzip -o *.zip
+          fi
+          ls -la
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -24,22 +30,65 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Configure Android SDK and Fix Gradle Scripts
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+          cat << 'EOF' > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "SmartUPIQRPro"
+          include ':app'
+          EOF
+
+          cat << 'EOF' > build.gradle
+          plugins {
+              id 'com.android.application' version '8.2.2' apply false
+          }
+          task clean(type: Delete) {
+              delete rootProject.buildDir
+          }
+          EOF
+
       - name: Download Offline Libraries for App
         run: |
           mkdir -p app/src/main/assets/libs
+          echo "Downloading Tailwind CSS..."
           curl -s -L https://cdn.tailwindcss.com -o app/src/main/assets/libs/tailwindcss.js
+          echo "Downloading Lucide icons..."
           curl -s -L https://unpkg.com/lucide@latest/dist/umd/lucide.js -o app/src/main/assets/libs/lucide.js
+          echo "Downloading QRCodeJS..."
           curl -s -L https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js -o app/src/main/assets/libs/qrcode.min.js
+          echo "Downloading jsQR..."
           curl -s -L https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js -o app/src/main/assets/libs/jsqr.min.js
+          echo "Downloading jsPDF..."
           curl -s -L https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js -o app/src/main/assets/libs/jspdf.umd.min.js
+          echo "Downloading jsPDF-AutoTable..."
           curl -s -L https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js -o app/src/main/assets/libs/jspdf.plugin.autotable.min.js
-          
-          sed -i 's|https://cdn.tailwindcss.com|libs/tailwindcss.js|g' app/src/main/assets/index.html
-          sed -i 's|https://unpkg.com/lucide@latest|libs/lucide.js|g' app/src/main/assets/index.html
-          sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js|libs/qrcode.min.js|g' app/src/main/assets/index.html
-          sed -i 's|https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js|libs/jsqr.min.js|g' app/src/main/assets/index.html
-          sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js|libs/jspdf.umd.min.js|g' app/src/main/assets/index.html
-          sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js|libs/jspdf.plugin.autotable.min.js|g' app/src/main/assets/index.html
+
+          for f in app/src/main/assets/*.html; do
+            if [ -f "$f" ]; then
+              echo "Patching offline libraries in $f"
+              sed -i 's|https://cdn.tailwindcss.com|libs/tailwindcss.js|g' "$f"
+              sed -i 's|https://unpkg.com/lucide@latest|libs/lucide.js|g' "$f"
+              sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js|libs/qrcode.min.js|g' "$f"
+              sed -i 's|https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js|libs/jsqr.min.js|g' "$f"
+              sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js|libs/jspdf.umd.min.js|g' "$f"
+              sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js|libs/jspdf.plugin.autotable.min.js|g' "$f"
+            fi
+          done
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -47,7 +96,7 @@ jobs:
           gradle-version: '8.4'
 
       - name: Build APK with Gradle
-        run: gradle assembleDebug --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Prepare APK for Download
         run: |
@@ -59,4 +108,3 @@ jobs:
           name: Smart_UPI_QR_Studio_Pro-APK
           path: Smart_UPI_QR_Studio_Pro.apk
           retention-days: 30
-          
