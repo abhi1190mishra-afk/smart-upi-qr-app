@@ -38,6 +38,7 @@ jobs:
       - name: Configure Android SDK and Fix Gradle Scripts
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "android.useAndroidX=true" > gradle.properties
 
           cat << 'EOF' > settings.gradle
           pluginManagement {
@@ -100,7 +101,6 @@ jobs:
           }
           EOF
 
-          # Clean safe theme without external dependency issues
           cat << 'EOF' > app/src/main/res/values/themes.xml
           <resources>
               <style name="Theme.SmartUPIQRPro" parent="Theme.AppCompat.DayNight.NoActionBar">
@@ -111,7 +111,6 @@ jobs:
           </resources>
           EOF
 
-          # Clean vector app icon
           cat << 'EOF' > app/src/main/res/drawable/ic_launcher.xml
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               android:width="108dp"
@@ -127,7 +126,6 @@ jobs:
           </vector>
           EOF
 
-          # Clean manifest
           cat << 'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
