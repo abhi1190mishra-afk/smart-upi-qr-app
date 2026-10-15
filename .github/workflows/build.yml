@@ -18,17 +18,30 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
 
-    - name: Grant Execute Permission to Gradlew
-      run: chmod +x gradlew || true
+    - name: Setup Gradle 8.7
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.7'
 
-    - name: Build Debug APK
-      run: ./gradlew assembleDebug --stacktrace
+    - name: Auto-Detect Project and Build APK
+      run: |
+        if [ -f "settings.gradle.kts" ]; then
+          gradle assembleDebug --stacktrace
+        else
+          PROJECT_DIR=$(find . -name "settings.gradle.kts" -not -path "*/.*" -exec dirname {} \; | head -n 1)
+          if [ -n "$PROJECT_DIR" ]; then
+            cd "$PROJECT_DIR"
+            gradle assembleDebug --stacktrace
+          else
+            echo "ERROR: settings.gradle.kts not found!"
+            exit 1
+          fi
+        fi
 
     - name: Upload Debug APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: UPI-QR-Generator-Debug-APK
-        path: app/build/outputs/apk/debug/app-debug.apk
+        name: UPI-Pay-QR-APK
+        path: "**/app/build/outputs/apk/debug/*.apk"
         retention-days: 14
