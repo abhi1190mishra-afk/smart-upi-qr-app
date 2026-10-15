@@ -22,7 +22,7 @@ jobs:
             echo "Found zip file, extracting..."
             unzip -o *.zip
           fi
-          # Duplicate xml icon files delete karke clean PNG logo rakhega
+          # Clean up any duplicate xml icon files
           rm -f app/src/main/res/drawable/ic_launcher.xml
           rm -f app/src/main/res/drawable/ic_launcher_background.xml
           rm -f app/src/main/res/drawable/ic_launcher_foreground.xml
