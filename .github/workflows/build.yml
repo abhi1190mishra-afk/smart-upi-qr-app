@@ -22,7 +22,7 @@ jobs:
             echo "Found zip file, extracting..."
             unzip -o *.zip
           fi
-          # Clean up any duplicate xml icon files
+          # Clean up duplicate vector files
           rm -f app/src/main/res/drawable/ic_launcher.xml
           rm -f app/src/main/res/drawable/ic_launcher_background.xml
           rm -f app/src/main/res/drawable/ic_launcher_foreground.xml
@@ -120,8 +120,6 @@ jobs:
       - name: Download Offline Libraries for App
         run: |
           mkdir -p app/src/main/assets/libs
-          echo "Downloading Tailwind CSS..."
-          curl -s -L https://cdn.tailwindcss.com -o app/src/main/assets/libs/tailwindcss.js
           echo "Downloading Lucide icons..."
           curl -s -L https://unpkg.com/lucide@latest/dist/umd/lucide.js -o app/src/main/assets/libs/lucide.js
           echo "Downloading QRCodeJS..."
@@ -136,7 +134,6 @@ jobs:
           for f in app/src/main/assets/*.html; do
             if [ -f "$f" ]; then
               echo "Patching offline libraries in $f"
-              sed -i 's|https://cdn.tailwindcss.com|libs/tailwindcss.js|g' "$f"
               sed -i 's|https://unpkg.com/lucide@latest|libs/lucide.js|g' "$f"
               sed -i 's|https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js|libs/qrcode.min.js|g' "$f"
               sed -i 's|https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js|libs/jsqr.min.js|g' "$f"
