@@ -24,8 +24,17 @@ jobs:
       with:
         gradle-version: '8.7'
 
-    - name: Auto-Detect Project and Build APK
+    - name: Auto-Unzip and Build APK
       run: |
+        # 1. Agar repository me koi bhi ZIP file hai, use auto-extract karein
+        for f in *.zip; do
+          if [ -f "$f" ]; then
+            echo "Unzipping $f..."
+            unzip -o -q "$f"
+          fi
+        done
+
+        # 2. settings.gradle.kts ko check karein
         if [ -f "settings.gradle.kts" ]; then
           gradle assembleDebug --stacktrace
         else
@@ -34,8 +43,30 @@ jobs:
             cd "$PROJECT_DIR"
             gradle assembleDebug --stacktrace
           else
-            echo "ERROR: settings.gradle.kts not found!"
-            exit 1
+            if [ -d "app" ]; then
+              cat << 'EOF' > settings.gradle.kts
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = "UPI-QR-Generator"
+include(":app")
+EOF
+              gradle assembleDebug --stacktrace
+            else
+              echo "ERROR: Neither settings.gradle.kts nor zip archive found!"
+              exit 1
+            fi
           fi
         fi
 
